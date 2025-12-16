@@ -1,10 +1,11 @@
 # NxtGenSec - Next Generation Security & Innovation Hub
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/savireddykirankumarreddys-projects/nxtgensec)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.2.8-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-blue?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![Security Patched](https://img.shields.io/badge/Security-Patched-brightgreen?style=for-the-badge)](https://nextjs.org/blog/security-update-2025-12-11)
 
 **NxtGenSec** is a cutting-edge platform focused on securing digital assets and pioneering the future of technology through AI, blockchain, quantum computing, and advanced automation. We create revolutionary solutions, transform businesses, and develop tomorrow's tech leaders with security woven into everything we do.
 
@@ -16,6 +17,16 @@
 - **Interactive Learning Paths**: Comprehensive courses in cybersecurity and software development
 - **Career Programs**: Internship and mentorship opportunities for aspiring tech professionals
 - **Modern UI/UX**: Sleek, responsive design with custom animations and interactive elements
+
+## 🛡️ Security
+
+This application has been patched against critical security vulnerabilities:
+
+- **React2Shell (CVE-2025-55182)** - Remote code execution vulnerability in React Server Components
+- **Denial of Service (CVE-2025-55184)** - Potential service disruption
+- **Source Code Disclosure (CVE-2025-55183)** - Unauthorized access to source code
+
+All dependencies have been updated to patched versions to ensure the highest level of security.
 
 ## 🚀 Technologies Used
 
