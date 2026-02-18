@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Linkedin, Mail, User } from "lucide-react"
+import { Linkedin, Mail, User, Github } from "lucide-react"
 
 const TeamSection = () => {
   const [isVisible, setIsVisible] = useState(false)
@@ -26,36 +26,22 @@ const TeamSection = () => {
 
   const team = [
     {
-      name: "John Doe",
+      name: "Kiran Kumar Reddy",
       role: "CEO & Founder",
       image: "/placeholder-user.jpg",
-      linkedin: "#",
+      linkedin: "https://www.linkedin.com/in/kiransavireddy/",
+      github: "https://github.com/SavireddyKiranKumarReddy",
       email: "ceo@nxtgensec.org",
       color: "blue",
     },
     {
-      name: "Jane Smith",
+      name: "Deva Sai Nandini",
       role: "CTO & Co-Founder",
       image: "/placeholder-user.jpg",
-      linkedin: "#",
+      linkedin: "https://www.linkedin.com/in/devasainandini-cyber/",
+      github: "https://github.com/DevaSaiNandiniMandapalli",
       email: "cto@nxtgensec.org",
       color: "green",
-    },
-    {
-      name: "Mike Johnson",
-      role: "Head of Security",
-      image: "/placeholder-user.jpg",
-      linkedin: "#",
-      email: "security@nxtgensec.org",
-      color: "orange",
-    },
-    {
-      name: "Sarah Williams",
-      role: "Head of Development",
-      image: "/placeholder-user.jpg",
-      linkedin: "#",
-      email: "dev@nxtgensec.org",
-      color: "purple",
     },
   ]
 
@@ -108,7 +94,7 @@ const TeamSection = () => {
 
         {/* Team Grid */}
         <div
-          className={`grid md:grid-cols-2 lg:grid-cols-4 gap-8 transition-all duration-1000 delay-200 ${
+          className={`grid md:grid-cols-2 gap-8 transition-all duration-1000 delay-200 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
           }`}
         >
@@ -142,6 +128,14 @@ const TeamSection = () => {
                       className={`p-2 rounded-full ${colorClasses.bg} ${colorClasses.text} hover:scale-110 transition-transform`}
                     >
                       <Linkedin size={18} />
+                    </a>
+                    <a
+                      href={member.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`p-2 rounded-full ${colorClasses.bg} ${colorClasses.text} hover:scale-110 transition-transform`}
+                    >
+                      <Github size={18} />
                     </a>
                     <a
                       href={`mailto:${member.email}`}

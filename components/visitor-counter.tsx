@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Eye } from "lucide-react"
 
 const VisitorCounter = () => {
-  const [visitorCount, setVisitorCount] = useState<number>(75)
+  const [visitorCount, setVisitorCount] = useState<number>(100)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {

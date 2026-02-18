@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // In-memory storage (for production, use a database like MongoDB, PostgreSQL, etc.)
 let visitorData = {
-  count: 75, // Starting count
+  count: 100, // Starting count
   ips: new Set<string>()
 }
 
@@ -37,10 +37,10 @@ export async function POST(request: NextRequest) {
     // Reset counter (admin functionality - you can add authentication)
     if (body.action === 'reset') {
       visitorData = {
-        count: 0,
+        count: 100,
         ips: new Set<string>()
       }
-      return NextResponse.json({ success: true, count: 0 })
+      return NextResponse.json({ success: true, count: 100 })
     }
     
     return NextResponse.json({ success: false, message: 'Invalid action' })
