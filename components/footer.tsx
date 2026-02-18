@@ -242,7 +242,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between">
             {/* Copyright */}
             <div className="text-gray-400 text-sm mb-4 md:mb-0">
-              © 2025 NxtGenSec. All rights reserved. | Pioneering the future of technology and security.
+              © 2026 NxtGenSec. All rights reserved. | Pioneering the future of technology and security.
             </div>
 
             {/* Back to Top */}
@@ -263,3 +263,4 @@ const Footer = () => {
 }
 
 export default Footer
+
