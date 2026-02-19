@@ -101,27 +101,7 @@ CREATE POLICY "visitor_stats_select_service_role" ON public.visitor_stats AS PER
   USING (false);  -- Blocks anon access, allows service_role via bypass
 
 -- ============================================================================
--- STEP 6: Create view for public stats (optional - shows only aggregate)
--- ============================================================================
-
--- This view can be made public if you want to show aggregate stats
-DROP VIEW IF EXISTS public.visitor_stats_public CASCADE;
-
-CREATE VIEW public.visitor_stats_public AS
-SELECT 
-  date,
-  total_visits_all_time,
-  unique_visits_today,
-  created_at,
-  updated_at
-FROM public.visitor_stats
-WHERE date = CURRENT_DATE AT TIME ZONE 'UTC';
-
--- Disable RLS on public view (it's aggregate data only)
-ALTER TABLE public.visitor_stats_public DISABLE ROW LEVEL SECURITY;
-
--- ============================================================================
--- STEP 7: Verification Queries
+-- STEP 6: Verification Queries
 -- ============================================================================
 
 -- Run these queries to verify RLS is working:
