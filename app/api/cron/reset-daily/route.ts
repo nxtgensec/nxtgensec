@@ -136,19 +136,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint for manual testing
+// GET endpoint - NOT ALLOWED (security: prevent accidental execution)
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET || 'your-secret-key';
+  return NextResponse.json(
+    { error: 'Method not allowed. Use POST with Authorization header.' },
+    { status: 405, headers: { 'Allow': 'POST, OPTIONS' } }
+  );
+}
 
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
-  // Call POST to run the cron job
-  const response = await POST(request);
-  return response;
+// Handle CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+    }
+  });
 }

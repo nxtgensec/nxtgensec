@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
-
-// Helper to get client IP
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0].trim() : request.headers.get('x-real-ip') || 'unknown';
-  return ip;
-}
+import { getClientIP, isValidIP } from '@/lib/ip-utils';
+import { sanitizeUserAgent, sanitizeReferer, sanitizePagePath, validateAction } from '@/lib/sanitize';
+import { addCORSHeaders, addSecurityHeaders, handleCORSPreflight } from '@/lib/cors';
 
 // Helper to get today's date in IST
 function getTodayDateIST(): string {
@@ -18,22 +14,31 @@ function getTodayDateIST(): string {
 
 // GET - Retrieve current visitor stats and track visit
 export async function GET(request: NextRequest) {
+  // Handle CORS preflight
+  const corsPreflightResponse = handleCORSPreflight(request);
+  if (corsPreflightResponse) {
+    return corsPreflightResponse;
+  }
+
   try {
     const ip = getClientIP(request);
     const today = getTodayDateIST();
 
-    if (ip === 'unknown') {
-      return NextResponse.json({
+    // Validate IP format
+    if (!isValidIP(ip)) {
+      const response = NextResponse.json({
         error: 'Could not determine IP address',
         totalVisits: 0,
         uniqueVisitsToday: 0
       }, { status: 400 });
+      
+      return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
     }
 
     // SECURITY: Check rate limit (30 requests per 60 seconds per IP)
     const { allowed, remaining } = checkRateLimit(ip, '/api/visitors');
     if (!allowed) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           error: 'Too many requests. Please try again later.',
           totalVisits: 0,
@@ -44,6 +49,8 @@ export async function GET(request: NextRequest) {
           headers: { 'Retry-After': '60' }
         }
       );
+      
+      return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
     }
 
     // Track visitor IP for today
@@ -90,9 +97,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Log this visit
-    const userAgent = request.headers.get('user-agent') || '';
-    const referer = request.headers.get('referer') || '';
+    // Log this visit with sanitized data
+    const rawUserAgent = request.headers.get('user-agent') || '';
+    const rawReferer = request.headers.get('referer') || '';
+    const rawPagePath = new URL(request.url).pathname;
+    
+    const userAgent = sanitizeUserAgent(rawUserAgent);
+    const referer = sanitizeReferer(rawReferer);
+    const pagePath = sanitizePagePath(rawPagePath);
     
     const { error: logError } = await supabaseAdmin
       .from('visitor_logs')
@@ -100,7 +112,7 @@ export async function GET(request: NextRequest) {
         ip_address: ip,
         user_agent: userAgent,
         referer: referer,
-        page_path: new URL(request.url).pathname
+        page_path: pagePath
       }]);
 
     if (logError) {
@@ -152,41 +164,80 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       totalVisits: totalVisits + (isNewVisitorToday ? 1 : 0),
       uniqueVisitsToday: uniqueVisitsToday + (isNewVisitorToday ? 1 : 0),
       isNewVisitorToday,
       date: today
     });
 
+    return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
+
   } catch (error) {
     console.error('Error in GET /api/visitors:', error);
     // SECURITY: Don't expose error details to client
-    return NextResponse.json({
+    const response = NextResponse.json({
       error: 'Failed to process visitor request',
       totalVisits: 0,
       uniqueVisitsToday: 0
     }, { status: 500 });
+    
+    return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
   }
 }
 
 // POST - Admin operations with authentication
 export async function POST(request: NextRequest) {
+  // Handle CORS preflight
+  const corsPreflightResponse = handleCORSPreflight(request);
+  if (corsPreflightResponse) {
+    return corsPreflightResponse;
+  }
+
   try {
     // SECURITY: Check for authorization header
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
-    // Only allow reset-daily action from authenticated cron
-    const body = await request.json();
-    const { action } = body;
+    // Validate request body
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      const response = NextResponse.json(
+        { success: false, error: 'Invalid JSON' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
+    }
+
+    // SECURITY: Validate action parameter
+    if (typeof body !== 'object' || body === null) {
+      const response = NextResponse.json(
+        { success: false, error: 'Invalid request' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
+    }
+
+    const bodyObj = body as Record<string, unknown>;
+    const { action } = bodyObj;
+
+    if (!validateAction(action)) {
+      const response = NextResponse.json(
+        { success: false, error: 'Invalid action' },
+        { status: 400 }
+      );
+      return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
+    }
 
     if (action === 'reset-daily') {
       if (authHeader !== `Bearer ${cronSecret}`) {
-        return NextResponse.json(
+        const response = NextResponse.json(
           { success: false, error: 'Unauthorized' },
           { status: 401 }
         );
+        return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
       }
 
       const today = getTodayDateIST();
@@ -203,16 +254,18 @@ export async function POST(request: NextRequest) {
       if (error) {
         console.error('Error resetting daily count:', error);
         // SECURITY: Don't expose database error details to client
-        return NextResponse.json(
+        const response = NextResponse.json(
           { success: false, error: 'Database operation failed' },
           { status: 500 }
         );
+        return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
       }
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         message: 'Daily count reset successfully'
       });
+      return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
     }
 
     if (action === 'get-stats') {
@@ -227,13 +280,14 @@ export async function POST(request: NextRequest) {
       if (statsError && statsError.code !== 'PGRST116') {
         // SECURITY: Don't expose database error details
         console.error('Error fetching stats:', statsError);
-        return NextResponse.json(
+        const response = NextResponse.json(
           { success: false, error: 'Failed to retrieve stats' },
           { status: 500 }
         );
+        return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
       }
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         data: statsData || {
           total_visits_all_time: 0,
@@ -241,20 +295,23 @@ export async function POST(request: NextRequest) {
           date: today
         }
       });
+      return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
     }
 
     // SECURITY: Only allow whitelisted actions
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: 'Invalid request'
     }, { status: 400 });
+    return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
 
   } catch (error) {
     console.error('Error in POST /api/visitors:', error);
     // SECURITY: Don't expose error details
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: false,
       error: 'Request processing failed'
     }, { status: 500 });
+    return addSecurityHeaders(addCORSHeaders(response, request.headers.get('origin')));
   }
 }
