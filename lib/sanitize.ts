@@ -79,37 +79,7 @@ export function sanitizePagePath(path: string): string {
   }
 }
 
-/**
- * Sanitize JSON input - validate before parsing
- */
-export function sanitizeJSON(data: unknown): unknown {
-  if (typeof data !== 'object' || data === null) {
-    return null;
-  }
-  
-  // For objects - recursively sanitize string values
-  if (Array.isArray(data)) {
-    return data.map(item => sanitizeJSON(item));
-  }
-  
-  const sanitized: { [key: string]: unknown } = {};
-  
-  for (const [key, value] of Object.entries(data)) {
-    // Validate key is string
-    if (typeof key !== 'string') continue;
-    
-    if (typeof value === 'string') {
-      // Sanitize string values
-      sanitized[key] = value.slice(0, 1000);
-    } else if (typeof value === 'number' || typeof value === 'boolean') {
-      sanitized[key] = value;
-    } else if (value === null) {
-      sanitized[key] = null;
-    }
-  }
-  
-  return sanitized;
-}
+
 
 /**
  * Validate action parameter (whitelist approach)

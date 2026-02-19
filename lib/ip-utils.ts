@@ -55,27 +55,3 @@ export function isValidIP(ip: string): boolean {
   
   return ipv4 || ipv6;
 }
-
-/**
- * Anonymize IP for privacy (keeps first 2 octets)
- * Example: 192.168.1.100 -> 192.168.x.x
- */
-export function anonymizeIP(ip: string): string {
-  if (!ip || ip === 'unknown') return 'unknown';
-  
-  // IPv4
-  if (ip.includes('.')) {
-    const parts = ip.split('.');
-    if (parts.length === 4) {
-      return `${parts[0]}.${parts[1]}.x.x`;
-    }
-  }
-  
-  // IPv6 - truncate to first 4 groups
-  if (ip.includes(':')) {
-    const parts = ip.split(':');
-    return `${parts.slice(0, 4).join(':')}:xxxx:xxxx:xxxx`;
-  }
-  
-  return 'unknown';
-}
