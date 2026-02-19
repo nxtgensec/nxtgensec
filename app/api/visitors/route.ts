@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getClientIP, isValidIP } from '@/lib/ip-utils';
 import { sanitizeUserAgent, sanitizeReferer, sanitizePagePath, validateAction } from '@/lib/sanitize';
@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
   try {
     const ip = getClientIP(request);
     const today = getTodayDateIST();
+
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Validate IP format
     if (!isValidIP(ip)) {
@@ -164,6 +166,46 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Only update visitor_stats when we detected a new visitor for today.
+    // Polling from the same client (same IP) should NOT increment counts.
+    if (isNewVisitorToday) {
+      try {
+        // Recompute totals from DB to avoid race conditions
+        const { count: totalDistinctIPs, error: totalDistinctError } = await supabaseAdmin
+          .from('visitor_ips')
+          .select('ip_address', { count: 'exact', head: false });
+
+        const { count: todayUniqueCount, error: todayUniqueError } = await supabaseAdmin
+          .from('visitor_ips')
+          .select('id', { count: 'exact' })
+          .eq('visit_date', today);
+
+        const updatedTotal = totalDistinctIPs || totalVisits || 0;
+        const updatedUnique = (todayUniqueCount || uniqueVisitsToday || 0);
+
+        const { error: updateStatsError } = await supabaseAdmin
+          .from('visitor_stats')
+          .upsert([
+            {
+              date: today,
+              total_visits_all_time: updatedTotal,
+              unique_visits_today: updatedUnique,
+              updated_at: new Date().toISOString()
+            }
+          ], { onConflict: 'date' });
+
+        if (updateStatsError) {
+          console.error('Error updating visitor_stats for new visitor:', updateStatsError);
+        }
+
+        // Reflect updated values
+        totalVisits = updatedTotal;
+        uniqueVisitsToday = updatedUnique;
+      } catch (err) {
+        console.error('Failed to update visitor_stats for new visitor:', err);
+      }
+    }
+
     const response = NextResponse.json({
       totalVisits: totalVisits + (isNewVisitorToday ? 1 : 0),
       uniqueVisitsToday: uniqueVisitsToday + (isNewVisitorToday ? 1 : 0),
@@ -198,6 +240,8 @@ export async function POST(request: NextRequest) {
     // SECURITY: Check for authorization header
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
+
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Validate request body
     let body: unknown;

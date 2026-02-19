@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 // Helper to get today's date in IST
 function getTodayDateIST(): string {
@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
 
     const today = getTodayDateIST();
     const yesterday = getYesterdayDateIST();
+
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Step 1: Count unique IPs for yesterday
     const { count: yesterdayUniqueCount, error: countError } = await supabaseAdmin
@@ -154,3 +156,4 @@ export async function OPTIONS(request: NextRequest) {
     }
   });
 }
+
