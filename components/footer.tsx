@@ -63,7 +63,7 @@ const Footer = () => {
   const socialLinks = [
     {
       icon: Linkedin,
-      href: "https://linkedin.com/in/nxtgen-sec-7a267b374",
+      href: "https://www.linkedin.com/company/nxtgensec",
       label: "LinkedIn",
       color: "hover:text-blue-400",
     },
@@ -263,4 +263,5 @@ const Footer = () => {
 }
 
 export default Footer
+
 
